@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#2a2a2a">
+  <title>목표 탑</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif; 
+      transition: background-color 0.3s, color 0.3s; 
+      overflow: hidden;
+      height: 100vh;
+    }
+    body.light { background-color: #f5f5f5; color: #333; }
+    body.dark { background-color: #1a1a1a; color: #e0e0e0; }
+    
+    /* 헤더 */
+    .header { 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      right: 0; 
+      height: 60px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      padding: 0 15px; 
+      z-index: 100; 
+    }
+    body.light .header { background-color: #fff; border-bottom: 1px solid #e0e0e0; }
+    body.dark .header { background-color: #2a2a2a; border-bottom: 1px solid #444; }
+    
+    .hamburger { 
+      width: 30px; 
+      height: 30px; 
+      cursor: pointer; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: space-around; 
+      padding: 5px 0; 
+    }
+    .hamburger span { 
+      display: block; 
+      height: 3px; 
+      background-color: currentColor; 
+      border-radius: 2px; 
+    }
+    
+    .theme-toggle { 
+      width: 40px; 
+      height: 40px; 
+      border-radius: 50%; 
+      border: none; 
+      cursor: pointer; 
+      font-size: 20px; 
+    }
+    body.light .theme-toggle { background-color: #333; color: #fff; }
+    body.dark .theme-toggle { background-color: #fff; color: #333; }
+    
+    /* 사이드바 */
+    .sidebar { 
+      position: fixed; 
+      top: 0; 
+      left: -280px; 
+      width: 280px; 
+      height: 100vh; 
+      z-index: 200; 
+      transition: left 0.3s; 
+      padding: 20px; 
+      overflow-y: auto; 
+    }
+    body.light .sidebar { background-color: #fff; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+    body.dark .sidebar { background-color: #2a2a2a; box-shadow: 2px 0 10px rgba(0,0,0,0.5); }
+    .sidebar.open { left: 0; }
+    
+    .sidebar-overlay { 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      right: 0; 
+      bottom: 0; 
+      background-color: rgba(0,0,0,0.5); 
+      z-index: 150; 
+      display: none; 
+    }
+    .sidebar-overlay.show { display: block; }
+    
+    .sidebar-item { 
+      padding: 15px 10px; 
+      margin: 5px 0; 
+      cursor: pointer; 
+      border-radius: 8px; 
+      font-weight: 500;
+    }
+    body.light .sidebar-item:hover { background-color: #f0f0f0; }
+    body.dark .sidebar-item:hover { background-color: #3a3a3a; }
+    .sidebar-item.active { 
+      background-color: #2196f3 !important; 
+      color: #fff; 
+    }
+    
+    .sidebar-divider {
+      height: 1px;
+      margin: 10px 0;
+    }
+    body.light .sidebar-divider { background-color: #e0e0e0; }
+    body.dark .sidebar-divider { background-color: #444; }
+    
+    /* 메인 컨테이너 */
+    .main-container { 
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .goal-header {
+      padding: 20px;
+      flex-shrink: 0;
+    }
+    
+    .goal-header h1 {
+      font-size: 28px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    .date-selector {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 15px;
+      align-items: center;
+    }
+    
+    .date-input {
+      padding: 8px 12px;
+      border: 1px solid;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      width: 100px;
+    }
+    body.light .date-input { 
+      background-color: #f9f9f9; 
+      border-color: #ddd; 
+      color: #333; 
+    }
+    body.dark .date-input { 
+      background-color: #333; 
+      border-color: #555; 
+      color: #e0e0e0; 
+    }
+    
+    .tick-count-selector {
+      padding: 8px 12px;
+      border: 1px solid;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      min-width: 120px;
+    }
+    body.light .tick-count-selector { 
+      background-color: #f9f9f9; 
+      border-color: #ddd; 
+      color: #333; 
+    }
+    body.dark .tick-count-selector { 
+      background-color: #333; 
+      border-color: #555; 
+      color: #e0e0e0; 
+    }
+    
+    .add-goal-btn {
+      padding: 12px 24px;
+      background-color: #2196f3;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      display: block;
+      margin: 0 auto;
+    }
+    .add-goal-btn:active {
+      transform: scale(0.98);
+    }
+    
+    /* 탑 컨테이너 - 스크롤 가능 */
+    .tower-container {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    /* 탑 층 */
+    .tower-block {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      padding: 20px;
+      color: #fff;
+      cursor: move;
+      position: relative;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      min-height: 80px;
+    }
+    
+    .tower-block:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+    }
+    
+    .tower-block.completed {
+      opacity: 0.4;
+      filter: grayscale(0.8);
+    }
+    
+    .tower-block.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+    
+    .tower-block.drag-over {
+      border: 2px dashed #ffd700;
+    }
+    
+    .achievement-checkbox {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    
+    .block-content-wrapper {
+      flex: 1;
+      cursor: pointer;
+    }
+    
+    .block-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .block-content {
+      font-size: 14px;
+      opacity: 0.9;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    
+    .block-number {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 24px;
+      font-weight: 700;
+      opacity: 0.3;
+    }
+    
+    /* 색상 팔레트 */
+    .tower-block.color-0 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .tower-block.color-1 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    .tower-block.color-2 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    .tower-block.color-3 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+    .tower-block.color-4 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+    .tower-block.color-5 { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+    .tower-block.color-6 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+    .tower-block.color-7 { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
+    .tower-block.color-8 { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
+    .tower-block.color-9 { background: linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%); }
+    
+    /* 빈 탑 메시지 */
+    .empty-tower {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+    
+    .empty-tower-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+    
+    /* 기간 목표 타임라인 */
+    .timeline-container {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 20px;
+    }
+    
+    .timeline-item {
+      margin-bottom: 30px;
+      padding: 20px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    body.light .timeline-item { background-color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    body.dark .timeline-item { background-color: #2a2a2a; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    
+    .timeline-header {
+      margin-bottom: 15px;
+    }
+    
+    .timeline-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    
+    .timeline-dates {
+      font-size: 13px;
+      opacity: 0.7;
+    }
+    
+    .timeline-bar-container {
+      position: relative;
+      height: 100px;
+      margin: 15px 0;
+    }
+    
+    .timeline-bar {
+      position: relative;
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+      margin: 26px 0;
+    }
+    
+    .timeline-ticks {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .timeline-tick {
+      width: 1px;
+      height: 20px;
+      background-color: rgba(0,0,0,0.2);
+      position: relative;
+      top: -6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .tick-date {
+      position: absolute;
+      top: 25px;
+      font-size: 11px;
+      white-space: nowrap;
+      opacity: 0.7;
+      transform: translateX(-50%);
+    }
+    
+    .tick-day {
+      position: absolute;
+      top: 40px;
+      font-size: 10px;
+      white-space: nowrap;
+      opacity: 0.6;
+      transform: translateX(-50%);
+    }
+    
+    .timeline-runner {
+      position: absolute;
+      top: -15px;
+      transform: translateX(-50%) scaleX(-1);
+      font-size: 30px;
+      z-index: 10;
+      animation: bounce 1s ease-in-out infinite;
+    }
+    
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) scaleX(-1) translateY(0); }
+      50% { transform: translateX(-50%) scaleX(-1) translateY(-5px); }
+    }
+    
+    .timeline-content {
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      margin-top: 10px;
+    }
+    
+    .timeline-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid;
+    }
+    body.light .timeline-footer { border-color: #e0e0e0; }
+    body.dark .timeline-footer { border-color: #444; }
+    
+    .timeline-pagination {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .page-btn {
+      padding: 6px 12px;
+      border: 1px solid;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      background-color: transparent;
+    }
+    body.light .page-btn { 
+      border-color: #ddd; 
+      color: #666;
+    }
+    body.dark .page-btn { 
+      border-color: #555; 
+      color: #aaa;
+    }
+    
+    .page-btn.active {
+      background-color: #2196f3;
+      color: #fff;
+      border-color: #2196f3;
+    }
+    
+    .page-btn:hover:not(.active) {
+      background-color: rgba(33, 150, 243, 0.1);
+    }
+    
+    .timeline-edit-btn {
+      padding: 8px 16px;
+      background-color: #2196f3;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    
+    /* 모달 */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .modal.show { display: flex; }
+    
+    .modal-content {
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    body.light .modal-content { background-color: #fff; }
+    body.dark .modal-content { background-color: #2a2a2a; }
+    
+    .modal-header {
+      padding: 20px;
+      font-size: 18px;
+      font-weight: 600;
+      border-bottom: 1px solid;
+    }
+    body.light .modal-header { border-color: #e0e0e0; }
+    body.dark .modal-header { border-color: #444; }
+    
+    .modal-body {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    
+    .modal-footer {
+      padding: 15px 20px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      border-top: 1px solid;
+    }
+    body.light .modal-footer { border-color: #e0e0e0; }
+    body.dark .modal-footer { border-color: #444; }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    
+    input[type="text"], input[type="date"], textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    body.light input[type="text"], body.light input[type="date"], body.light textarea { 
+      background-color: #f9f9f9; 
+      border-color: #ddd; 
+      color: #333; 
+    }
+    body.dark input[type="text"], body.dark input[type="date"], body.dark textarea { 
+      background-color: #333; 
+      border-color: #555; 
+      color: #e0e0e0; 
+    }
+    
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+    
+    .modal-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .modal-btn.primary {
+      background-color: #2196f3;
+      color: #fff;
+    }
+    
+    .modal-btn.danger {
+      background-color: #f44336;
+      color: #fff;
+    }
+    
+    .modal-btn.secondary {
+      background-color: #f5f5f5;
+      color: #666;
+    }
+    body.dark .modal-btn.secondary {
+      background-color: #3a3a3a;
+      color: #aaa;
+    }
+    
+    .delete-btn-container {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid;
+    }
+    body.light .delete-btn-container { border-color: #e0e0e0; }
+    body.dark .delete-btn-container { border-color: #444; }
+    
+    /* 데이터 관리 페이지 */
+    .data-management {
+      padding: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .data-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      border-radius: 12px;
+    }
+    body.light .data-section { background-color: #fff; }
+    body.dark .data-section { background-color: #2a2a2a; }
+    
+    .data-section h2 {
+      font-size: 20px;
+      margin-bottom: 15px;
+    }
+    
+    .data-section p {
+      margin-bottom: 15px;
+      line-height: 1.6;
+      opacity: 0.8;
+    }
+    
+    .data-btn {
+      padding: 12px 24px;
+      background-color: #2196f3;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+    }
+    
+    .data-btn.danger {
+      background-color: #f44336;
+    }
+    
+    input[type="file"] {
+      display: none;
+    }
+  </style>
+</head>
+<body class="light">
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="hamburger" onclick="toggleSidebar()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+  </div>
+  
+  <!-- 사이드바 -->
+  <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <div class="sidebar">
+    <div class="sidebar-item active" onclick="showGoalType('life', this)">인생 목표</div>
+    <div class="sidebar-item" onclick="showGoalType('year', this)">연 목표</div>
+    <div class="sidebar-item" onclick="showGoalType('month', this)">월 목표</div>
+    <div class="sidebar-item" onclick="showGoalType('week', this)">주 목표</div>
+    <div class="sidebar-item" onclick="showGoalType('day', this)">일 목표</div>
+    <div class="sidebar-item" onclick="showGoalType('period', this)">기간 목표</div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-item" onclick="showDataManagement(this)">데이터 관리</div>
+  </div>
+  
+  <!-- 메인 컨테이너 -->
+  <div class="main-container" id="mainContainer">
+    <!-- 여기에 동적으로 콘텐츠가 로드됩니다 -->
+  </div>
+  
+  <!-- 목표 추가/수정 모달 -->
+  <div class="modal" id="goalModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span id="modalTitle">목표 추가</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">제목</label>
+          <input type="text" id="goalTitle" placeholder="목표 제목을 입력하세요">
+        </div>
+        <div class="form-group">
+          <label class="form-label">내용</label>
+          <textarea id="goalContent" placeholder="목표 내용을 입력하세요"></textarea>
+        </div>
+        <div class="delete-btn-container" id="deleteContainer" style="display: none;">
+          <button class="modal-btn danger" style="width: 100%;" onclick="deleteGoal()">목표 삭제</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" onclick="closeModal()">취소</button>
+        <button class="modal-btn primary" onclick="saveGoal()">저장</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 기간 목표 추가/수정 모달 -->
+  <div class="modal" id="periodModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span id="periodModalTitle">기간 목표 추가</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">시작 날짜</label>
+          <input type="date" id="periodStartDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">종료 날짜</label>
+          <input type="date" id="periodEndDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">제목</label>
+          <input type="text" id="periodTitle" placeholder="기간 목표 제목을 입력하세요">
+        </div>
+        <div class="form-group">
+          <label class="form-label">내용</label>
+          <textarea id="periodContent" placeholder="기간 목표 내용을 입력하세요"></textarea>
+        </div>
+        <div class="delete-btn-container" id="periodDeleteContainer" style="display: none;">
+          <button class="modal-btn danger" style="width: 100%;" onclick="deletePeriodGoal()">목표 삭제</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" onclick="closePeriodModal()">취소</button>
+        <button class="modal-btn primary" onclick="savePeriodGoal()">저장</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // 전역 변수
+    let currentGoalType = 'life';
+    let currentYear = null;
+    let currentMonth = null;
+    let currentDay = null;
+    let editingGoalId = null;
+    let draggedElement = null;
+    let draggedIndex = null;
+    
+    const goalTypeNames = {
+      'life': '인생 목표',
+      'year': '연 목표',
+      'month': '월 목표',
+      'week': '주 목표',
+      'day': '일 목표',
+      'period': '기간 목표'
+    };
+    
+    // 한국 시간 기준 오늘 날짜
+    function getKoreanDate() {
+      const now = new Date();
+      const koreaTime = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+      return {
+        year: koreaTime.getUTCFullYear(),
+        month: koreaTime.getUTCMonth() + 1,
+        day: koreaTime.getUTCDate(),
+        date: koreaTime
+      };
+    }
+    
+    // 로컬 스토리지 관리
+    const storage = {
+      getGoals: function(type, year, month, day) {
+        let key = `goals_${type}`;
+        if (year) key += `_${year}`;
+        if (month) key += `_${month}`;
+        if (day) key += `_${day}`;
+        
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : [];
+      },
+      
+      saveGoals: function(type, goals, year, month, day) {
+        let key = `goals_${type}`;
+        if (year) key += `_${year}`;
+        if (month) key += `_${month}`;
+        if (day) key += `_${day}`;
+        
+        localStorage.setItem(key, JSON.stringify(goals));
+      },
+      
+      addGoal: function(type, goal, year, month, day) {
+        const goals = this.getGoals(type, year, month, day);
+        goal.id = Date.now();
+        goal.createdAt = new Date().toISOString();
+        goal.completed = false;
+        goals.unshift(goal); // 최신 목표를 맨 앞에 추가 (화면에서는 위에 표시)
+        this.saveGoals(type, goals, year, month, day);
+        return goal;
+      },
+      
+      updateGoal: function(type, goalId, updatedGoal, year, month, day) {
+        const goals = this.getGoals(type, year, month, day);
+        const index = goals.findIndex(g => g.id === goalId);
+        if (index !== -1) {
+          goals[index] = { ...goals[index], ...updatedGoal, updatedAt: new Date().toISOString() };
+          this.saveGoals(type, goals, year, month, day);
+          return true;
+        }
+        return false;
+      },
+      
+      toggleCompleted: function(type, goalId, year, month, day) {
+        const goals = this.getGoals(type, year, month, day);
+        const goal = goals.find(g => g.id === goalId);
+        if (goal) {
+          goal.completed = !goal.completed;
+          this.saveGoals(type, goals, year, month, day);
+          return goal.completed;
+        }
+        return false;
+      },
+      
+      deleteGoal: function(type, goalId, year, month, day) {
+        const goals = this.getGoals(type, year, month, day);
+        const filtered = goals.filter(g => g.id !== goalId);
+        this.saveGoals(type, filtered, year, month, day);
+      },
+      
+      reorderGoals: function(type, fromIndex, toIndex, year, month, day) {
+        const goals = this.getGoals(type, year, month, day);
+        const [movedGoal] = goals.splice(fromIndex, 1);
+        goals.splice(toIndex, 0, movedGoal);
+        this.saveGoals(type, goals, year, month, day);
+      },
+      
+      exportAllData: function() {
+        const allData = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key.startsWith('goals_')) {
+            allData[key] = JSON.parse(localStorage.getItem(key));
+          }
+        }
+        return allData;
+      },
+      
+      importAllData: function(data) {
+        for (const key in data) {
+          if (key.startsWith('goals_')) {
+            localStorage.setItem(key, JSON.stringify(data[key]));
+          }
+        }
+      },
+      
+      clearAllData: function() {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key.startsWith('goals_')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+      }
+    };
+    
+    // 초기화
+    function init() {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.body.className = savedTheme;
+      document.querySelector('.theme-toggle').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+      
+      const today = getKoreanDate();
+      currentYear = today.year;
+      currentMonth = today.month;
+      currentDay = today.day;
+      
+      showGoalType('life');
+    }
+    
+    // 목표 타입 화면 표시
+    function showGoalType(type, element) {
+      currentGoalType = type;
+      
+      // 사이드바 active 상태 업데이트
+      document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      if (element) {
+        element.classList.add('active');
+      }
+      
+      // 사이드바 닫기
+      if (document.querySelector('.sidebar').classList.contains('open')) {
+        toggleSidebar();
+      }
+      
+      // 날짜 초기화
+      const today = getKoreanDate();
+      currentYear = today.year;
+      currentMonth = today.month;
+      currentDay = today.day;
+      
+      // 화면 렌더링
+      if (type === 'period') {
+        renderPeriodGoalPage();
+      } else {
+        renderGoalPage();
+      }
+    }
+    
+    // 일반 목표 페이지 렌더링
+    function renderGoalPage() {
+      const typeName = goalTypeNames[currentGoalType];
+      let year = null, month = null, day = null;
+      
+      if (currentGoalType === 'year') year = currentYear;
+      if (currentGoalType === 'month') { year = currentYear; month = currentMonth; }
+      if (currentGoalType === 'day') { year = currentYear; month = currentMonth; day = currentDay; }
+      
+      const goals = storage.getGoals(currentGoalType, year, month, day);
+      
+      let html = `
+        <div class="goal-header">
+          <h1>${typeName}</h1>
+      `;
+      
+      // 날짜 선택기
+      if (currentGoalType === 'year') {
+        html += `
+          <div class="date-selector">
+            <input type="number" class="date-input" value="${currentYear}" 
+                   onchange="currentYear = parseInt(this.value); renderGoalPage();" 
+                   min="1900" max="2100" placeholder="년도">
+          </div>
+        `;
+      } else if (currentGoalType === 'month') {
+        html += `
+          <div class="date-selector">
+            <input type="number" class="date-input" value="${currentYear}" 
+                   onchange="currentYear = parseInt(this.value); renderGoalPage();" 
+                   min="1900" max="2100" placeholder="년도">
+            <input type="number" class="date-input" value="${currentMonth}" 
+                   onchange="currentMonth = parseInt(this.value); renderGoalPage();" 
+                   min="1" max="12" placeholder="월">
+          </div>
+        `;
+      } else if (currentGoalType === 'day') {
+        html += `
+          <div class="date-selector">
+            <input type="number" class="date-input" value="${currentYear}" 
+                   onchange="currentYear = parseInt(this.value); renderGoalPage();" 
+                   min="1900" max="2100" placeholder="년도">
+            <input type="number" class="date-input" value="${currentMonth}" 
+                   onchange="currentMonth = parseInt(this.value); renderGoalPage();" 
+                   min="1" max="12" placeholder="월">
+            <input type="number" class="date-input" value="${currentDay}" 
+                   onchange="currentDay = parseInt(this.value); renderGoalPage();" 
+                   min="1" max="31" placeholder="일">
+          </div>
+        `;
+      }
+      
+      html += `
+          <button class="add-goal-btn" onclick="openAddModal()">+ 목표 추가</button>
+        </div>
+        <div class="tower-container" id="towerContainer">
+      `;
+      
+      if (goals.length === 0) {
+        html += `
+          <div class="empty-tower">
+            <div class="empty-tower-icon">🏰</div>
+            <p>아직 ${typeName}이(가) 없습니다.</p>
+            <p>첫 번째 목표를 추가해보세요!</p>
+          </div>
+        `;
+      } else {
+        // 배열을 역순으로 표시 (첫 번째 요소가 위에, 마지막 요소가 아래에)
+        goals.forEach((goal, index) => {
+          const colorClass = `color-${index % 10}`;
+          const completedClass = goal.completed ? 'completed' : '';
+          html += `
+            <div class="tower-block ${colorClass} ${completedClass}" 
+                 draggable="true"
+                 data-index="${index}"
+                 data-id="${goal.id}">
+              <input type="checkbox" class="achievement-checkbox" 
+                     ${goal.completed ? 'checked' : ''}
+                     data-goal-id="${goal.id}">
+              <div class="block-content-wrapper" data-goal-id="${goal.id}">
+                <div class="block-number">${goals.length - index}</div>
+                <div class="block-title">${escapeHtml(goal.title)}</div>
+                <div class="block-content">${escapeHtml(goal.content).substring(0, 100)}${goal.content.length > 100 ? '...' : ''}</div>
+              </div>
+            </div>
+          `;
+        });
+      }
+      
+      html += `</div>`;
+      
+      document.getElementById('mainContainer').innerHTML = html;
+      
+      // 이벤트 리스너 추가
+      attachGoalEventListeners();
+    }
+    
+    // 기간 목표 페이지 렌더링
+    function renderPeriodGoalPage() {
+      const goals = storage.getGoals('period');
+      const today = getKoreanDate().date;
+      
+      // 눈금 개수 설정 불러오기
+      const savedTickCount = localStorage.getItem('ticksPerPage') || '10';
+      
+      let html = `
+        <div class="goal-header">
+          <h1>기간 목표</h1>
+          <div class="date-selector">
+            <label for="tickCountSelector">페이지당 눈금 수:</label>
+            <select id="tickCountSelector" class="tick-count-selector" onchange="changeTicksPerPage(this.value)">
+              <option value="5" ${savedTickCount === '5' ? 'selected' : ''}>5개</option>
+              <option value="7" ${savedTickCount === '7' ? 'selected' : ''}>7개</option>
+              <option value="10" ${savedTickCount === '10' ? 'selected' : ''}>10개</option>
+              <option value="14" ${savedTickCount === '14' ? 'selected' : ''}>14개</option>
+              <option value="20" ${savedTickCount === '20' ? 'selected' : ''}>20개</option>
+              <option value="30" ${savedTickCount === '30' ? 'selected' : ''}>30개</option>
+            </select>
+          </div>
+          <button class="add-goal-btn" onclick="openPeriodModal()">+ 기간 목표 추가</button>
+        </div>
+        <div class="timeline-container">
+      `;
+      
+      if (goals.length === 0) {
+        html += `
+          <div class="empty-tower">
+            <div class="empty-tower-icon">🎯</div>
+            <p>아직 기간 목표가 없습니다.</p>
+            <p>첫 번째 기간 목표를 추가해보세요!</p>
+          </div>
+        `;
+      } else {
+        const ticksPerPage = parseInt(savedTickCount);
+        
+        goals.forEach((goal, goalIndex) => {
+          const [startY, startM, startD] = goal.startDate.split('-').map(Number);
+          const [endY, endM, endD] = goal.endDate.split('-').map(Number);
+          
+          const startDate = new Date(startY, startM - 1, startD);
+          const endDate = new Date(endY, endM - 1, endD);
+          const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          
+          const totalDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+          const passedDays = Math.floor((todayNormalized - startDate) / (1000 * 60 * 60 * 24));
+          
+          const totalPages = Math.ceil(totalDays / ticksPerPage);
+          
+          // 현재 날짜가 속한 페이지 찾기
+          let currentPage = Math.max(1, Math.min(totalPages, Math.floor(passedDays / ticksPerPage) + 1));
+          if (!goal.currentPage) {
+            goal.currentPage = currentPage;
+          }
+          
+          html += renderTimelineItem(goal, goalIndex, goal.currentPage || currentPage, ticksPerPage);
+        });
+      }
+      
+      html += `</div>`;
+      
+      document.getElementById('mainContainer').innerHTML = html;
+      
+      // 타임라인 아이템 클릭 이벤트
+      document.querySelectorAll('.timeline-item').forEach(item => {
+        const goalId = parseInt(item.dataset.goalId);
+        item.addEventListener('click', function(e) {
+          if (!e.target.classList.contains('page-btn') && !e.target.classList.contains('timeline-edit-btn')) {
+            const goals = storage.getGoals('period');
+            const goal = goals.find(g => g.id === goalId);
+            if (goal) {
+              const [startY, startM, startD] = goal.startDate.split('-').map(Number);
+              const [endY, endM, endD] = goal.endDate.split('-').map(Number);
+              
+              const startDate = new Date(startY, startM - 1, startD);
+              const endDate = new Date(endY, endM - 1, endD);
+              const today = getKoreanDate().date;
+              const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+              
+              const passedDays = Math.floor((todayNormalized - startDate) / (1000 * 60 * 60 * 24));
+              const ticksPerPage = parseInt(localStorage.getItem('ticksPerPage') || '10');
+              const totalDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+              const totalPages = Math.ceil(totalDays / ticksPerPage);
+              const currentPage = Math.max(1, Math.min(totalPages, Math.floor(passedDays / ticksPerPage) + 1));
+              
+              goal.currentPage = currentPage;
+              renderPeriodGoalPage();
+            }
+          }
+        });
+      });
+    }
+    
+    // 눈금 개수 변경
+    function changeTicksPerPage(value) {
+      localStorage.setItem('ticksPerPage', value);
+      renderPeriodGoalPage();
+    }
+    
+    // 타임라인 아이템 렌더링 (페이징 포함)
+    function renderTimelineItem(goal, goalIndex, currentPage, ticksPerPage = 10) {
+      // 날짜 문자열을 로컬 시간으로 파싱 (YYYY-MM-DD 형식)
+      const startDateStr = goal.startDate;
+      const endDateStr = goal.endDate;
+      const [startY, startM, startD] = startDateStr.split('-').map(Number);
+      const [endY, endM, endD] = endDateStr.split('-').map(Number);
+      
+      const startDate = new Date(startY, startM - 1, startD);
+      const endDate = new Date(endY, endM - 1, endD);
+      const today = getKoreanDate().date;
+      const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      
+      // 일 수 계산
+      const totalDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+      const passedDays = Math.floor((todayNormalized - startDate) / (1000 * 60 * 60 * 24));
+      
+      console.log('Timeline Debug:', {
+        startDate: `${startDate.getFullYear()}-${startDate.getMonth()+1}-${startDate.getDate()}`,
+        endDate: `${endDate.getFullYear()}-${endDate.getMonth()+1}-${endDate.getDate()}`,
+        today: `${todayNormalized.getFullYear()}-${todayNormalized.getMonth()+1}-${todayNormalized.getDate()}`,
+        totalDays,
+        passedDays
+      });
+      
+      const totalPages = Math.ceil(totalDays / ticksPerPage);
+      
+      // 현재 페이지에 표시할 날짜 범위 (dayIndex는 0부터 시작)
+      const startDayIndex = (currentPage - 1) * ticksPerPage;
+      const endDayIndex = Math.min(startDayIndex + ticksPerPage, totalDays);
+      const daysInPage = endDayIndex - startDayIndex;
+      
+      // 현재 페이지 내에서 오늘의 위치 계산
+      // passedDays는 0부터 시작 (0 = 시작일)
+      let runnerPosition = -1;
+      if (passedDays >= startDayIndex && passedDays < endDayIndex) {
+        // passedDays가 0이면 첫 번째 눈금(startDayIndex=0)에 위치해야 함
+        const relativePosition = passedDays - startDayIndex;
+        runnerPosition = (relativePosition / daysInPage) * 100;
+        
+        console.log('Runner Position Debug:', {
+          passedDays,
+          startDayIndex,
+          endDayIndex,
+          daysInPage,
+          relativePosition,
+          runnerPosition: runnerPosition + '%'
+        });
+      }
+      
+      // 눈금과 날짜 생성
+      let ticks = '';
+      for (let i = 0; i <= daysInPage; i++) {
+        const dayIndex = startDayIndex + i;
+        if (dayIndex < totalDays) {
+          const tickDate = new Date(startDate);
+          tickDate.setDate(startDate.getDate() + dayIndex);
+          
+          const dateStr = `${tickDate.getMonth() + 1}/${tickDate.getDate()}`;
+          const dayStr = getDayOfWeek(tickDate);
+          
+          console.log(`Tick ${i}: dayIndex=${dayIndex}, date=${dateStr}, isToday=${dayIndex === passedDays}`);
+          
+          ticks += `
+            <div class="timeline-tick">
+              <span class="tick-date">${dateStr}</span>
+              <span class="tick-day">${dayStr}</span>
+            </div>
+          `;
+        }
+      }
+      
+      // 페이지 버튼 생성
+      let pagination = '';
+      if (totalPages > 1) {
+        for (let i = 1; i <= totalPages; i++) {
+          const activeClass = i === currentPage ? 'active' : '';
+          pagination += `<button class="page-btn ${activeClass}" onclick="changeTimelinePage(${goal.id}, ${i}, event)">${i}</button>`;
+        }
+      }
+      
+      let html = `
+        <div class="timeline-item" data-goal-id="${goal.id}">
+          <div class="timeline-header">
+            <div class="timeline-title">${escapeHtml(goal.title)}</div>
+            <div class="timeline-dates">
+              ${formatDate(startDate)} ~ ${formatDate(endDate)} (${totalDays}일) | 오늘: ${today.getMonth()+1}/${today.getDate()} | 경과: ${passedDays}일
+            </div>
+          </div>
+          <div class="timeline-bar-container">
+            <div class="timeline-bar">
+              <div class="timeline-ticks">${ticks}</div>
+              ${runnerPosition >= 0 ? `<div class="timeline-runner" style="left: ${runnerPosition}%">🏃</div>` : ''}
+            </div>
+          </div>
+          <div class="timeline-content">${escapeHtml(goal.content)}</div>
+          <div class="timeline-footer">
+            ${totalPages > 1 ? `<div class="timeline-pagination">${pagination}</div>` : '<div></div>'}
+            <button class="timeline-edit-btn" onclick="openEditPeriodModal(${goal.id}, event)">수정</button>
+          </div>
+        </div>
+      `;
+      
+      return html;
+    }
+    
+    // 타임라인 페이지 변경
+    function changeTimelinePage(goalId, page, event) {
+      event.stopPropagation();
+      
+      const goals = storage.getGoals('period');
+      const goal = goals.find(g => g.id === goalId);
+      if (goal) {
+        goal.currentPage = page;
+        storage.saveGoals('period', goals);
+        renderPeriodGoalPage();
+      }
+    }
+    
+    // 요일 구하기
+    function getDayOfWeek(date) {
+      const days = ['일', '월', '화', '수', '목', '금', '토'];
+      return days[date.getDay()];
+    }
+    
+    // 이벤트 리스너 추가
+    function attachGoalEventListeners() {
+      // 체크박스 이벤트
+      document.querySelectorAll('.achievement-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const goalId = parseInt(this.dataset.goalId);
+          
+          let year = null, month = null, day = null;
+          if (currentGoalType === 'year') year = currentYear;
+          if (currentGoalType === 'month') { year = currentYear; month = currentMonth; }
+          if (currentGoalType === 'day') { year = currentYear; month = currentMonth; day = currentDay; }
+          
+          storage.toggleCompleted(currentGoalType, goalId, year, month, day);
+          renderGoalPage();
+        });
+      });
+      
+      // 블록 클릭 이벤트
+      document.querySelectorAll('.block-content-wrapper').forEach(wrapper => {
+        wrapper.addEventListener('click', function(e) {
+          const goalId = parseInt(this.dataset.goalId);
+          openEditModal(goalId);
+        });
+      });
+      
+      // 드래그 이벤트
+      document.querySelectorAll('.tower-block').forEach(block => {
+        block.addEventListener('dragstart', handleDragStart);
+        block.addEventListener('dragend', handleDragEnd);
+        block.addEventListener('dragover', handleDragOver);
+        block.addEventListener('drop', handleDrop);
+        block.addEventListener('dragenter', function(e) {
+          e.preventDefault();
+        });
+      });
+    }
+    
+    // 모달 열기 (추가)
+    function openAddModal() {
+      editingGoalId = null;
+      document.getElementById('modalTitle').textContent = `${goalTypeNames[currentGoalType]} 추가`;
+      document.getElementById('goalTitle').value = '';
+      document.getElementById('goalContent').value = '';
+      document.getElementById('deleteContainer').style.display = 'none';
+      document.getElementById('goalModal').classList.add('show');
+    }
+    
+    // 모달 열기 (수정)
+    function openEditModal(goalId) {
+      let year = null, month = null, day = null;
+      if (currentGoalType === 'year') year = currentYear;
+      if (currentGoalType === 'month') { year = currentYear; month = currentMonth; }
+      if (currentGoalType === 'day') { year = currentYear; month = currentMonth; day = currentDay; }
+      
+      const goals = storage.getGoals(currentGoalType, year, month, day);
+      const goal = goals.find(g => g.id === goalId);
+      
+      if (!goal) return;
+      
+      editingGoalId = goalId;
+      document.getElementById('modalTitle').textContent = `${goalTypeNames[currentGoalType]} 수정`;
+      document.getElementById('goalTitle').value = goal.title;
+      document.getElementById('goalContent').value = goal.content;
+      document.getElementById('deleteContainer').style.display = 'block';
+      document.getElementById('goalModal').classList.add('show');
+    }
+    
+    // 모달 닫기
+    function closeModal() {
+      document.getElementById('goalModal').classList.remove('show');
+      editingGoalId = null;
+    }
+    
+    // 목표 저장
+    function saveGoal() {
+      const title = document.getElementById('goalTitle').value.trim();
+      const content = document.getElementById('goalContent').value.trim();
+      
+      if (!title) {
+        alert('제목을 입력해주세요.');
+        return;
+      }
+      
+      if (!content) {
+        alert('내용을 입력해주세요.');
+        return;
+      }
+      
+      let year = null, month = null, day = null;
+      if (currentGoalType === 'year') year = currentYear;
+      if (currentGoalType === 'month') { year = currentYear; month = currentMonth; }
+      if (currentGoalType === 'day') { year = currentYear; month = currentMonth; day = currentDay; }
+      
+      if (editingGoalId) {
+        // 수정
+        if (confirm('목표를 수정하시겠습니까?')) {
+          storage.updateGoal(currentGoalType, editingGoalId, { title, content }, year, month, day);
+          closeModal();
+          renderGoalPage();
+        }
+      } else {
+        // 추가
+        if (confirm('목표를 추가하시겠습니까?')) {
+          storage.addGoal(currentGoalType, { title, content }, year, month, day);
+          closeModal();
+          renderGoalPage();
+        }
+      }
+    }
+    
+    // 목표 삭제
+    function deleteGoal() {
+      if (confirm('정말 이 목표를 삭제하시겠습니까?')) {
+        let year = null, month = null, day = null;
+        if (currentGoalType === 'year') year = currentYear;
+        if (currentGoalType === 'month') { year = currentYear; month = currentMonth; }
+        if (currentGoalType === 'day') { year = currentYear; month = currentMonth; day = currentDay; }
+        
+        storage.deleteGoal(currentGoalType, editingGoalId, year, month, day);
+        closeModal();
+        renderGoalPage();
+      }
+    }
+    
+    // 기간 목표 모달
+    function openPeriodModal() {
+      editingGoalId = null;
+      const today = getKoreanDate().date.toISOString().split('T')[0];
+      document.getElementById('periodModalTitle').textContent = '기간 목표 추가';
+      document.getElementById('periodStartDate').value = today;
+      document.getElementById('periodEndDate').value = today;
+      document.getElementById('periodTitle').value = '';
+      document.getElementById('periodContent').value = '';
+      document.getElementById('periodDeleteContainer').style.display = 'none';
+      document.getElementById('periodModal').classList.add('show');
+    }
+    
+    function openEditPeriodModal(goalId, event) {
+      if (event) {
+        event.stopPropagation();
+      }
+      
+      const goals = storage.getGoals('period');
+      const goal = goals.find(g => g.id === goalId);
+      
+      if (!goal) return;
+      
+      editingGoalId = goalId;
+      document.getElementById('periodModalTitle').textContent = '기간 목표 수정';
+      document.getElementById('periodStartDate').value = goal.startDate;
+      document.getElementById('periodEndDate').value = goal.endDate;
+      document.getElementById('periodTitle').value = goal.title;
+      document.getElementById('periodContent').value = goal.content;
+      document.getElementById('periodDeleteContainer').style.display = 'block';
+      document.getElementById('periodModal').classList.add('show');
+    }
+    
+    function closePeriodModal() {
+      document.getElementById('periodModal').classList.remove('show');
+      editingGoalId = null;
+    }
+    
+    function savePeriodGoal() {
+      const startDate = document.getElementById('periodStartDate').value;
+      const endDate = document.getElementById('periodEndDate').value;
+      const title = document.getElementById('periodTitle').value.trim();
+      const content = document.getElementById('periodContent').value.trim();
+      
+      if (!startDate || !endDate) {
+        alert('시작 날짜와 종료 날짜를 선택해주세요.');
+        return;
+      }
+      
+      if (new Date(startDate) > new Date(endDate)) {
+        alert('시작 날짜가 종료 날짜보다 늦을 수 없습니다.');
+        return;
+      }
+      
+      if (!title) {
+        alert('제목을 입력해주세요.');
+        return;
+      }
+      
+      if (!content) {
+        alert('내용을 입력해주세요.');
+        return;
+      }
+      
+      if (editingGoalId) {
+        if (confirm('기간 목표를 수정하시겠습니까?')) {
+          storage.updateGoal('period', editingGoalId, { startDate, endDate, title, content });
+          closePeriodModal();
+          renderPeriodGoalPage();
+        }
+      } else {
+        if (confirm('기간 목표를 추가하시겠습니까?')) {
+          storage.addGoal('period', { startDate, endDate, title, content });
+          closePeriodModal();
+          renderPeriodGoalPage();
+        }
+      }
+    }
+    
+    function deletePeriodGoal() {
+      if (confirm('정말 이 기간 목표를 삭제하시겠습니까?')) {
+        storage.deleteGoal('period', editingGoalId);
+        closePeriodModal();
+        renderPeriodGoalPage();
+      }
+    }
+    
+    // 드래그 앤 드롭 처리
+    function handleDragStart(e) {
+      draggedElement = e.currentTarget;
+      draggedIndex = parseInt(e.currentTarget.dataset.index);
+      e.currentTarget.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', e.currentTarget.innerHTML);
+    }
+    
+    function handleDragEnd(e) {
+      e.currentTarget.classList.remove('dragging');
+      document.querySelectorAll('.tower-block').forEach(block => {
+        block.classList.remove('drag-over');
+      });
+    }
+    
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      
+      const target = e.currentTarget;
+      if (target && target !== draggedElement && target.classList.contains('tower-block')) {
+        document.querySelectorAll('.tower-block').forEach(block => {
+          block.classList.remove('drag-over');
+        });
+        target.classList.add('drag-over');
+      }
+      
+      return false;
+    }
+    
+    function handleDrop(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      
+      const target = e.currentTarget;
+      
+      if (target && target !== draggedElement && target.classList.contains('tower-block')) {
+        const targetIndex = parseInt(target.dataset.index);
+        
+        let year = null, month = null, day = null;
+        if (currentGoalType === 'year') year = currentYear;
+        if (currentGoalType === 'month') { year = currentYear; month = currentMonth; }
+        if (currentGoalType === 'day') { year = currentYear; month = currentMonth; day = currentDay; }
+        
+        storage.reorderGoals(currentGoalType, draggedIndex, targetIndex, year, month, day);
+        renderGoalPage();
+      }
+      
+      document.querySelectorAll('.tower-block').forEach(block => {
+        block.classList.remove('drag-over');
+      });
+      
+      return false;
+    }
+    
+    // 데이터 관리 페이지
+    function showDataManagement(element) {
+      // 사이드바 active 상태 업데이트
+      document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      if (element) {
+        element.classList.add('active');
+      }
+      
+      // 사이드바 닫기
+      if (document.querySelector('.sidebar').classList.contains('open')) {
+        toggleSidebar();
+      }
+      
+      const html = `
+        <div class="data-management">
+          <h1 style="text-align: center; margin-bottom: 30px;">데이터 관리</h1>
+          
+          <div class="data-section">
+            <h2>데이터 내보내기</h2>
+            <p>모든 목표 데이터를 JSON 파일로 내보냅니다. 백업용으로 사용하거나 다른 기기로 이동할 때 활용하세요.</p>
+            <button class="data-btn" onclick="exportData()">📥 데이터 내보내기</button>
+          </div>
+          
+          <div class="data-section">
+            <h2>데이터 가져오기</h2>
+            <p>이전에 내보낸 JSON 파일을 가져옵니다. 기존 데이터와 병합됩니다.</p>
+            <input type="file" id="importFile" accept=".json" onchange="importData(event)">
+            <button class="data-btn" onclick="document.getElementById('importFile').click()">📤 데이터 가져오기</button>
+          </div>
+          
+          <div class="data-section">
+            <h2>⚠️ 모든 데이터 삭제</h2>
+            <p>주의: 이 작업은 되돌릴 수 없습니다. 모든 목표 데이터가 영구적으로 삭제됩니다.</p>
+            <button class="data-btn danger" onclick="clearAllData()">🗑️ 모든 데이터 삭제</button>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('mainContainer').innerHTML = html;
+    }
+    
+    function exportData() {
+      const data = storage.exportAllData();
+      const dataStr = JSON.stringify(data, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `goal-tower-backup-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      
+      URL.revokeObjectURL(url);
+      alert('데이터가 내보내기 되었습니다!');
+    }
+    
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (confirm('데이터를 가져오시겠습니까? 기존 데이터와 병합됩니다.')) {
+            storage.importAllData(data);
+            alert('데이터를 성공적으로 가져왔습니다!');
+            showGoalType('life');
+          }
+        } catch (error) {
+          alert('올바른 JSON 파일이 아닙니다.');
+        }
+      };
+      reader.readAsText(file);
+    }
+    
+    function clearAllData() {
+      if (confirm('정말 모든 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다!')) {
+        if (confirm('한 번 더 확인합니다. 정말로 모든 목표를 삭제하시겠습니까?')) {
+          storage.clearAllData();
+          alert('모든 데이터가 삭제되었습니다.');
+          showGoalType('life');
+        }
+      }
+    }
+    
+    // 사이드바 토글
+    function toggleSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const overlay = document.querySelector('.sidebar-overlay');
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('show');
+    }
+    
+    // 테마 토글
+    function toggleTheme() {
+      const current = document.body.className;
+      const newTheme = current === 'dark' ? 'light' : 'dark';
+      document.body.className = newTheme;
+      localStorage.setItem('theme', newTheme);
+      document.querySelector('.theme-toggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    }
+    
+    // HTML 이스케이프
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // 날짜 포맷
+    function formatDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}.${month}.${day}`;
+    }
+    
+    // 초기 실행
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
